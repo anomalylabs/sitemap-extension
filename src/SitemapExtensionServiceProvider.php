@@ -59,4 +59,13 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
         }
     }
 
+    /**
+     * Boot the service provider.
+     *
+     * @param Repository $config
+     */
+    public function boot(Repository $config)
+    {
+        $config->set('sitemap', $config->get('anomaly.extension.sitemap::sitemap'));
+    }
 }
