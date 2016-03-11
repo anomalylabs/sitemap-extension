@@ -32,7 +32,7 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
      * @var array
      */
     protected $routes = [
-        'sitemap.{format}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index'
+        'sitemap{format?}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index'
     ];
 
     /**
@@ -48,10 +48,13 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
         foreach ($addons->withConfig('sitemap')->forget(['anomaly.extension.sitemap']) as $addon) {
             $router->get(
                 $config->get(
-                    $addon->getNamespace('sitemap.location') . '{format}',
-                    $addon->getSlug() . '/sitemap{format}'
+                    $addon->getNamespace('sitemap.location') . '{format?}',
+                    $addon->getSlug() . '/sitemap{format?}'
                 ),
-                'Anomaly\SitemapExtension\Http\Controller\SitemapController@view'
+                [
+                    'addon' => $addon->getNamespace(),
+                    'uses'  => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@view'
+                ]
             );
         }
     }
