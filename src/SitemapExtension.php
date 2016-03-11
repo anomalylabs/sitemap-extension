@@ -2,17 +2,20 @@
 
 use Anomaly\Streams\Platform\Addon\Extension\Extension;
 
+/**
+ * Class SitemapExtension
+ *
+ * @link          http://pyrocms.com/
+ * @author        PyroCMS, Inc. <support@pyrocms.com>
+ * @author        Ryan Thompson <ryan@pyrocms.com>
+ * @package       Anomaly\SitemapExtension
+ */
 class SitemapExtension extends Extension
 {
 
     /**
-     * This extension provides...
-     *
-     * This should contain the dot namespace
-     * of the addon this extension is for followed
-     * by the purpose.variation of the extension.
-     *
-     * For example anomaly.module.store::gateway.stripe
+     * This extension provides a mechanism
+     * to generate dynamic sitemaps.
      *
      * @var null|string
      */

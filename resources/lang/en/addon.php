@@ -3,5 +3,5 @@
 return [
     'title'       => 'Sitemap',
     'name'        => 'Sitemap Extension',
-    'description' => ''
+    'description' => 'A dynamic sitemap generator extension.'
 ];

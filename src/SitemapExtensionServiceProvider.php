@@ -1,6 +1,10 @@
 <?php namespace Anomaly\SitemapExtension;
 
+use Anomaly\Streams\Platform\Addon\Addon;
+use Anomaly\Streams\Platform\Addon\AddonCollection;
 use Anomaly\Streams\Platform\Addon\AddonServiceProvider;
+use Illuminate\Contracts\Config\Repository;
+use Illuminate\Routing\Router;
 
 /**
  * Class SitemapExtensionServiceProvider
@@ -14,26 +18,42 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
 {
 
     /**
+     * The addon providers.
+     *
+     * @var array
+     */
+    protected $providers = [
+        'Roumen\Sitemap\SitemapServiceProvider'
+    ];
+
+    /**
      * The addon routes.
      *
      * @var array
      */
     protected $routes = [
-        //'sitemap.xml' => ''
+        'sitemap.{format}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index'
     ];
 
     /**
-     * The addon providers.
+     * Boot the addon.
      *
-     * @var array
+     * @param Repository      $config
+     * @param Router          $router
+     * @param AddonCollection $addons
      */
-    protected $providers = [];
-
-    /**
-     * The addon singletons.
-     *
-     * @var array
-     */
-    protected $singletons = [];
+    public function boot(Repository $config, Router $router, AddonCollection $addons)
+    {
+        /* @var Addon $addon */
+        foreach ($addons->withConfig('sitemap')->forget(['anomaly.extension.sitemap']) as $addon) {
+            $router->get(
+                $config->get(
+                    $addon->getNamespace('sitemap.location') . '{format}',
+                    $addon->getSlug() . '/sitemap{format}'
+                ),
+                'Anomaly\SitemapExtension\Http\Controller\SitemapController@view'
+            );
+        }
+    }
 
 }
