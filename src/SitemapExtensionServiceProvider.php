@@ -36,13 +36,13 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
     ];
 
     /**
-     * Boot the addon.
+     * Map additional routes.
      *
      * @param Repository      $config
      * @param Router          $router
      * @param AddonCollection $addons
      */
-    public function boot(Repository $config, Router $router, AddonCollection $addons)
+    public function map(Repository $config, Router $router, AddonCollection $addons)
     {
         /* @var Addon $addon */
         foreach ($addons->withConfig('sitemap')->forget(['anomaly.extension.sitemap']) as $addon) {
