@@ -65,6 +65,8 @@ class SitemapController extends PublicController
     }
 
     /**
+     * Return an index of sitemaps.
+     *
      * @param null $format
      * @return \Illuminate\Support\Facades\View
      */
@@ -88,6 +90,8 @@ class SitemapController extends PublicController
     }
 
     /**
+     * Return a sitemap.
+     *
      * @param null $format
      * @return \Illuminate\Support\Facades\View
      */
