@@ -100,13 +100,24 @@ class SitemapController extends PublicController
         $addon = $this->addons->get(array_get($this->route->getAction(), 'addon'));
 
         foreach ($this->container->call($this->config->get($addon->getNamespace('sitemap.entries'))) as $entry) {
-            $this->container->call(
-                $this->config->get($addon->getNamespace('sitemap.handler')),
-                [
-                    'entry'   => $entry,
-                    'sitemap' => $this->sitemap
-                ]
-            );
+
+            if ($handler = $addon->getNamespace('sitemap.handler')) {
+                $this->container->call(
+                    $this->config->get($handler),
+                    [
+                        'entry'   => $entry,
+                        'sitemap' => $this->sitemap
+                    ]
+                );
+            } elseif ($parameters = $addon->getNamespace('sitemap.parameters')) {
+                $this->container->call(
+                    [
+                        $this->sitemap,
+                        'add'
+                    ],
+                    $this->container->call($parameters, compact('entry'))
+                );
+            }
         }
 
         return $this->sitemap->render(ltrim($format, '.'));
