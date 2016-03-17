@@ -2,6 +2,8 @@
 
 use Anomaly\Streams\Platform\Addon\Addon;
 use Anomaly\Streams\Platform\Addon\AddonCollection;
+use Anomaly\Streams\Platform\Addon\Extension\Extension;
+use Anomaly\Streams\Platform\Addon\Module\Module;
 use Anomaly\Streams\Platform\Http\Controller\PublicController;
 use Anomaly\Streams\Platform\Routing\UrlGenerator;
 use Illuminate\Contracts\Config\Repository;
@@ -74,6 +76,11 @@ class SitemapController extends PublicController
     {
         /* @var Addon $addon */
         foreach ($this->addons->withConfig('sitemap')->forget(['anomaly.extension.sitemap']) as $addon) {
+
+            /* @var Module|Extension $addon */
+            if (in_array($addon->getType(), ['module', 'extension']) && !$addon->isEnabled()) {
+                continue;
+            }
 
             $lastmod = $this->config->get($addon->getNamespace('sitemap.lastmod'));
 
