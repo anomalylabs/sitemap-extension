@@ -3,6 +3,8 @@
 use Anomaly\Streams\Platform\Addon\Addon;
 use Anomaly\Streams\Platform\Addon\AddonCollection;
 use Anomaly\Streams\Platform\Addon\AddonServiceProvider;
+use Anomaly\Streams\Platform\Addon\Extension\Extension;
+use Anomaly\Streams\Platform\Addon\Module\Module;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Routing\Router;
 
@@ -46,6 +48,12 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
     {
         /* @var Addon $addon */
         foreach ($addons->withConfig('sitemap')->forget(['anomaly.extension.sitemap']) as $addon) {
+
+            /* @var Module|Extension $addon */
+            if (in_array($addon->getType(), ['module', 'extension']) && !$addon->isEnabled()) {
+                continue;
+            }
+
             $router->get(
                 $config->get(
                     $addon->getNamespace('sitemap.location') . '{format?}',
