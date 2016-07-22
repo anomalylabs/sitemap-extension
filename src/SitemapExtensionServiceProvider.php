@@ -57,7 +57,7 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
             $router->get(
                 $config->get(
                     $addon->getNamespace('sitemap.location') . '{format?}',
-                    $addon->getSlug() . '/sitemap{format?}'
+                    '/sitemap/' . $addon->getNamespace() . '{format?}'
                 ),
                 [
                     'addon' => $addon->getNamespace(),
