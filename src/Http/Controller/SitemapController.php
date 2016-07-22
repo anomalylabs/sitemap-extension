@@ -106,24 +106,36 @@ class SitemapController extends PublicController
     {
         $addon = $this->addons->get(array_get($this->route->getAction(), 'addon'));
 
-        foreach ($this->container->call($this->config->get($addon->getNamespace('sitemap.entries'))) as $entry) {
+        $sitemaps = $this->config->get($addon->getNamespace('sitemap'));
 
-            if ($handler = $addon->getNamespace('sitemap.handler')) {
-                $this->container->call(
-                    $this->config->get($handler),
-                    [
-                        'entry'   => $entry,
-                        'sitemap' => $this->sitemap
-                    ]
-                );
-            } elseif ($parameters = $addon->getNamespace('sitemap.parameters')) {
-                $this->container->call(
-                    [
-                        $this->sitemap,
-                        'add'
-                    ],
-                    $this->container->call($parameters, compact('entry'))
-                );
+        /**
+         * Since the sitemap can be a flat sitemap or an array of sitemaps,
+         * if it is flat then convert it to an array of one.
+         */
+        if (!empty($sitemaps) && !is_array(array_get($sitemaps, 0))) {
+            $sitemaps = [$sitemaps];
+        }
+
+        foreach ($sitemaps as $sitemap) {
+            foreach ($this->container->call(array_get($sitemap, 'entries')) as $entry) {
+
+                if ($handler = array_get($sitemap, 'handler')) {
+                    $this->container->call(
+                        $handler,
+                        [
+                            'entry'   => $entry,
+                            'sitemap' => $this->sitemap
+                        ]
+                    );
+                } elseif ($parameters = array_get($sitemap, 'parameters')) {
+                    $this->container->call(
+                        [
+                            $this->sitemap,
+                            'add'
+                        ],
+                        $this->container->call($parameters, compact('entry'))
+                    );
+                }
             }
         }
 
