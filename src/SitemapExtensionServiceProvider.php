@@ -14,7 +14,6 @@ use Illuminate\Routing\Router;
  * @link          http://pyrocms.com/
  * @author        PyroCMS, Inc. <support@pyrocms.com>
  * @author        Ryan Thompson <ryan@pyrocms.com>
- * @package       Anomaly\SitemapExtension
  */
 class SitemapExtensionServiceProvider extends AddonServiceProvider
 {
@@ -25,7 +24,7 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
      * @var array
      */
     protected $providers = [
-        'Roumen\Sitemap\SitemapServiceProvider'
+        'Roumen\Sitemap\SitemapServiceProvider',
     ];
 
     /**
@@ -34,7 +33,7 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
      * @var array
      */
     protected $routes = [
-        'sitemap{format?}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index'
+        'sitemap{format?}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index',
     ];
 
     /**
@@ -61,7 +60,7 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
                 ),
                 [
                     'addon' => $addon->getNamespace(),
-                    'uses'  => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@view'
+                    'uses'  => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@view',
                 ]
             );
         }
