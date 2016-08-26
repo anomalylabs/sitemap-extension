@@ -5,7 +5,6 @@ use Anomaly\Streams\Platform\Addon\AddonCollection;
 use Anomaly\Streams\Platform\Addon\Extension\Extension;
 use Anomaly\Streams\Platform\Addon\Module\Module;
 use Anomaly\Streams\Platform\Http\Controller\PublicController;
-use Anomaly\Streams\Platform\Routing\UrlGenerator;
 use Illuminate\Contracts\Config\Repository;
 use Roumen\Sitemap\Sitemap;
 
@@ -15,17 +14,9 @@ use Roumen\Sitemap\Sitemap;
  * @link          http://pyrocms.com/
  * @author        PyroCMS, Inc. <support@pyrocms.com>
  * @author        Ryan Thompson <ryan@pyrocms.com>
- * @package       Anomaly\SitemapExtension\Http\Controller
  */
 class SitemapController extends PublicController
 {
-
-    /**
-     * The URL generator.
-     *
-     * @var UrlGenerator
-     */
-    private $url;
 
     /**
      * The config repository.
@@ -51,16 +42,14 @@ class SitemapController extends PublicController
     /**
      * Create a new SitemapController instance.
      *
-     * @param UrlGenerator    $url
      * @param Repository      $config
      * @param AddonCollection $addons
      * @param Sitemap         $sitemap
      */
-    public function __construct(UrlGenerator $url, Repository $config, AddonCollection $addons, Sitemap $sitemap)
+    public function __construct(Repository $config, AddonCollection $addons, Sitemap $sitemap)
     {
         parent::__construct();
 
-        $this->url     = $url;
         $this->config  = $config;
         $this->addons  = $addons;
         $this->sitemap = $sitemap;
@@ -69,7 +58,7 @@ class SitemapController extends PublicController
     /**
      * Return an index of sitemaps.
      *
-     * @param null $format
+     * @param  null                             $format
      * @return \Illuminate\Support\Facades\View
      */
     public function index($format = null)
@@ -99,7 +88,7 @@ class SitemapController extends PublicController
     /**
      * Return a sitemap.
      *
-     * @param null $format
+     * @param  null                             $format
      * @return \Illuminate\Support\Facades\View
      */
     public function view($format = null)
@@ -107,20 +96,19 @@ class SitemapController extends PublicController
         $addon = $this->addons->get(array_get($this->route->getAction(), 'addon'));
 
         foreach ($this->container->call($this->config->get($addon->getNamespace('sitemap.entries'))) as $entry) {
-
             if ($handler = $addon->getNamespace('sitemap.handler')) {
                 $this->container->call(
                     $this->config->get($handler),
                     [
                         'entry'   => $entry,
-                        'sitemap' => $this->sitemap
+                        'sitemap' => $this->sitemap,
                     ]
                 );
             } elseif ($parameters = $addon->getNamespace('sitemap.parameters')) {
                 $this->container->call(
                     [
                         $this->sitemap,
-                        'add'
+                        'add',
                     ],
                     $this->container->call($parameters, compact('entry'))
                 );
