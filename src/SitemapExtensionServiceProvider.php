@@ -8,13 +8,6 @@ use Anomaly\Streams\Platform\Addon\Module\Module;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Routing\Router;
 
-/**
- * Class SitemapExtensionServiceProvider
- *
- * @link          http://pyrocms.com/
- * @author        PyroCMS, Inc. <support@pyrocms.com>
- * @author        Ryan Thompson <ryan@pyrocms.com>
- */
 class SitemapExtensionServiceProvider extends AddonServiceProvider
 {
 
@@ -33,7 +26,7 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
      * @var array
      */
     protected $routes = [
-        'sitemap{format?}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index',
+        'sitemap{format}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index',
     ];
 
     /**
