@@ -26,11 +26,7 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
      * @var array
      */
     protected $routes = [
-<<<<<<< HEAD
         'sitemap{format}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index',
-=======
-        'sitemap{format?}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index',
->>>>>>> 2.1
     ];
 
     /**
