@@ -42,9 +42,9 @@ class SitemapController extends PublicController
     /**
      * Create a new SitemapController instance.
      *
-     * @param Repository      $config
+     * @param Repository $config
      * @param AddonCollection $addons
-     * @param Sitemap         $sitemap
+     * @param Sitemap $sitemap
      */
     public function __construct(Repository $config, AddonCollection $addons, Sitemap $sitemap)
     {
@@ -58,7 +58,7 @@ class SitemapController extends PublicController
     /**
      * Return an index of sitemaps.
      *
-     * @param  null                             $format
+     * @param  null $format
      * @return \Illuminate\Support\Facades\View
      */
     public function index($format = null)
@@ -76,7 +76,7 @@ class SitemapController extends PublicController
             $this->sitemap->addSitemap(
                 $this->config->get(
                     $addon->getNamespace('sitemap.location') . $format,
-                    $this->url->to('/sitemap/' . $addon->getNamespace() . $format)
+                    $this->url->to('sitemap/' . $addon->getNamespace() . $format)
                 ),
                 $lastmod ? $this->container->call($lastmod) : null
             );
@@ -88,33 +88,43 @@ class SitemapController extends PublicController
     /**
      * Return a sitemap.
      *
-     * @param  null                             $format
+     * @param  null $format
      * @return \Illuminate\Support\Facades\View
      */
     public function view($format = null)
     {
-        $addon = $this->addons->get(array_get($this->route->getAction(), 'addon'));
-
-        foreach ($this->container->call($this->config->get($addon->getNamespace('sitemap.entries'))) as $entry) {
-            if ($handler = $addon->getNamespace('sitemap.handler')) {
-                $this->container->call(
-                    $this->config->get($handler),
-                    [
-                        'entry'   => $entry,
-                        'sitemap' => $this->sitemap,
-                    ]
-                );
-            } elseif ($parameters = $addon->getNamespace('sitemap.parameters')) {
-                $this->container->call(
-                    [
-                        $this->sitemap,
-                        'add',
-                    ],
-                    $this->container->call($parameters, compact('entry'))
-                );
-            }
+        $addon    = $this->addons->get(array_get($this->route->getAction(), 'addon'));
+        $sitemaps = $this->config->get($addon->getNamespace('sitemap'));
+        /**
+         * Since the sitemap can be a flat sitemap or an array of sitemaps,
+         * if it is flat then convert it to an array of one.
+         */
+        if (!empty($sitemaps) && !is_array(array_values($sitemaps)[0])) {
+            $sitemaps = [$sitemaps];
         }
 
+        foreach ($sitemaps as $sitemap) {
+            foreach ($this->container->call(array_get($sitemap, 'entries')) as $entry) {
+                if ($handler = array_get($sitemap, 'handler')) {
+                    $this->container->call(
+                        $handler,
+                        [
+                            'entry'   => $entry,
+                            'sitemap' => $this->sitemap,
+                        ]
+                    );
+                } elseif ($parameters = array_get($sitemap, 'parameters')) {
+                    $this->container->call(
+                        [
+                            $this->sitemap,
+                            'add',
+                        ],
+                        $this->container->call($parameters, compact('entry'))
+                    );
+                }
+            }
+        }
+        
         return $this->sitemap->render(ltrim($format, '.'));
     }
 }

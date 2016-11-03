@@ -32,8 +32,8 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
     /**
      * Map additional routes.
      *
-     * @param Repository      $config
-     * @param Router          $router
+     * @param Repository $config
+     * @param Router $router
      * @param AddonCollection $addons
      */
     public function map(Repository $config, Router $router, AddonCollection $addons)
@@ -49,7 +49,7 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
             $router->get(
                 $config->get(
                     $addon->getNamespace('sitemap.location') . '{format?}',
-                    '/sitemap/' . $addon->getNamespace() . '{format?}'
+                    'sitemap/' . $addon->getNamespace() . '{format?}'
                 ),
                 [
                     'addon' => $addon->getNamespace(),
