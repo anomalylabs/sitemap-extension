@@ -76,7 +76,7 @@ class SitemapController extends PublicController
             $this->sitemap->addSitemap(
                 $this->config->get(
                     $addon->getNamespace('sitemap.location') . $format,
-                    $this->url->to($addon->getSlug() . '/sitemap' . $format)
+                    $this->url->to('/sitemap/' . $addon->getNamespace() . $format)
                 ),
                 $lastmod ? $this->container->call($lastmod) : null
             );
