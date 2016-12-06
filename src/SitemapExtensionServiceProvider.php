@@ -26,7 +26,12 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
      * @var array
      */
     protected $routes = [
-        'sitemap{format}' => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index',
+        'sitemap{format}' => [
+            'uses'  => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@index',
+            'where' => [
+                'format' => '\.(xml|html)',
+            ],
+        ],
     ];
 
     /**
@@ -54,6 +59,9 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
                 [
                     'addon' => $addon->getNamespace(),
                     'uses'  => 'Anomaly\SitemapExtension\Http\Controller\SitemapController@view',
+                    'where' => [
+                        'format' => '\.(xml|html)',
+                    ],
                 ]
             );
         }
