@@ -21,7 +21,7 @@
         "email": "support@pyrocms.com"
     },
     "require": {
-        "roumen/sitemap": "2.7.*"
+        "roumen/sitemap": "2.6.*"
     },
     "autoload": {
         "psr-4": {
