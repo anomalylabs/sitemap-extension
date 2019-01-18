@@ -148,30 +148,19 @@ class SitemapController extends PublicController
                     $images       = []; // @todo Make this around hookable.
                     $translations = [];
 
+                    $lastmod = $entry
+                        ->lastModified()
+                        ->toAtomString();
+
                     if ($translatable) {
 
-                        $lastmod = $entry
-                            ->lastModified()
-                            ->toAtomString();
-
-                        $defaultRoute = $entry->route('view');
-
-                        $translatedRoute = $entry
-                            ->translate()
-                            ->route('view');
 
                         foreach ($locales as $locale) {
                             if ($locale != $default) {
 
-                                if ($defaultRoute != $translatedRoute) {
-                                    $url = $translatedRoute;
-                                } else {
-                                    $url = '/' . $locale . $defaultRoute;
-                                }
-
                                 $translations[] = [
                                     'language' => $locale,
-                                    'url'      => url($url),
+                                    'url'      => $entry->route('view'),
                                 ];
                             }
                         }
