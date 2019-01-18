@@ -2,11 +2,14 @@
 
 use Anomaly\Streams\Platform\Addon\Addon;
 use Anomaly\Streams\Platform\Addon\AddonCollection;
+use Anomaly\Streams\Platform\Addon\Command\GetAddon;
 use Anomaly\Streams\Platform\Addon\Extension\Extension;
 use Anomaly\Streams\Platform\Addon\Module\Module;
+use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
+use Anomaly\Streams\Platform\Entry\Contract\EntryRepositoryInterface;
 use Anomaly\Streams\Platform\Http\Controller\PublicController;
-use Illuminate\Contracts\Config\Repository;
-use Roumen\Sitemap\Sitemap;
+use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
+use Laravelium\Sitemap\Sitemap;
 
 /**
  * Class SitemapController
@@ -19,112 +22,189 @@ class SitemapController extends PublicController
 {
 
     /**
-     * The config repository.
-     *
-     * @var Repository
-     */
-    protected $config;
-
-    /**
-     * The addon collection.
-     *
-     * @var AddonCollection
-     */
-    protected $addons;
-
-    /**
-     * The sitemap utility.
-     *
-     * @var Sitemap
-     */
-    protected $sitemap;
-
-    /**
-     * Create a new SitemapController instance.
-     *
-     * @param Repository $config
-     * @param AddonCollection $addons
-     * @param Sitemap $sitemap
-     */
-    public function __construct(Repository $config, AddonCollection $addons, Sitemap $sitemap)
-    {
-        parent::__construct();
-
-        $this->config  = $config;
-        $this->addons  = $addons;
-        $this->sitemap = $sitemap;
-    }
-
-    /**
      * Return an index of sitemaps.
      *
-     * @param  null $format
-     * @return \Illuminate\Support\Facades\View
+     * @param AddonCollection $addons
+     * @param Sitemap $sitemap
+     * @return string
      */
-    public function index($format = null)
+    public function index(AddonCollection $addons, Sitemap $sitemap)
     {
         /* @var Addon $addon */
-        foreach ($this->addons->withConfig('sitemap')->forget(['anomaly.extension.sitemap']) as $addon) {
+        foreach ($addons->withConfig('sitemap')->forget(['anomaly.extension.sitemap']) as $addon) {
 
             /* @var Module|Extension $addon */
             if (in_array($addon->getType(), ['module', 'extension']) && !$addon->isEnabled()) {
                 continue;
             }
 
-            $lastmod = $this->config->get($addon->getNamespace('sitemap.lastmod'));
+            /**
+             * Loop over the various
+             * sitemaps for this addon.
+             */
+            foreach (config($addon->getNamespace('sitemap')) as $file => $configuration) {
 
-            $this->sitemap->addSitemap(
-                $this->config->get(
-                    $addon->getNamespace('sitemap.location') . $format,
-                    $this->url->to('sitemap/' . $addon->getNamespace() . $format)
-                ),
-                $lastmod ? $this->container->call($lastmod) : null
-            );
+                if (is_string($configuration)) {
+                    $configuration = [
+                        'repository' => $configuration,
+                    ];
+                }
+
+                $repository = array_get($configuration, 'repository');
+
+                if (!class_exists($repository) && !interface_exists($repository)) {
+                    continue;
+                }
+
+                /* @var EntryRepositoryInterface $repository */
+                $repository = $this->container->make($repository);
+
+                $lastmod = $repository
+                    ->lastModified()// Grabs Entry
+                    ->lastModified()// Grabs Carbon
+                    ->toAtomString(); // Returns String
+
+                $sitemap->addSitemap(
+                    $this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'),
+                    $lastmod
+                );
+            }
         }
 
-        return $this->sitemap->render('sitemapindex');
+        return $this->response->make(
+            $sitemap->generate('sitemapindex')['content'],
+            200,
+            [
+                'Content-Type' => 'application/xml',
+            ]
+        );
     }
 
     /**
      * Return a sitemap.
      *
-     * @param  null $format
-     * @return \Illuminate\Support\Facades\View
+     * @param Sitemap $sitemap
+     * @param $addon
+     * @param $file
+     * @return \Illuminate\Http\Response
+     * @throws \Exception
      */
-    public function view($format = null)
+    public function view(Sitemap $sitemap, $addon, $file)
     {
-        $addon    = $this->addons->get(array_get($this->route->getAction(), 'addon'));
-        $sitemaps = $this->config->get($addon->getNamespace('sitemap'));
-        /**
-         * Since the sitemap can be a flat sitemap or an array of sitemaps,
-         * if it is flat then convert it to an array of one.
-         */
-        if (!empty($sitemaps) && !is_array(array_values($sitemaps)[0])) {
-            $sitemaps = [$sitemaps];
+        $addon = $this->dispatchNow(new GetAddon($addon));
+
+        $configuration = config($hint = $addon->getNamespace('sitemap.' . $file));
+
+        if (is_string($configuration)) {
+            $configuration = [
+                'repository' => $configuration,
+            ];
         }
 
-        foreach ($sitemaps as $sitemap) {
-            foreach ($this->container->call(array_get($sitemap, 'entries')) as $entry) {
-                if ($handler = array_get($sitemap, 'handler')) {
-                    $this->container->call(
-                        $handler,
-                        [
-                            'entry'   => $entry,
-                            'sitemap' => $this->sitemap,
-                        ]
-                    );
-                } elseif ($parameters = array_get($sitemap, 'parameters')) {
-                    $this->container->call(
-                        [
-                            $this->sitemap,
-                            'add',
-                        ],
-                        $this->container->call($parameters, compact('entry'))
+        $repository = array_get($configuration, 'repository');
+
+        if (!class_exists($repository) && !interface_exists($repository)) {
+            throw new \Exception("Repository for [{$hint}] sitemap repository does not exist[$repository]");
+        }
+
+        // Cache TTL (1hr)
+        $ttl = array_get($configuration, 'ttl', 60 * 60);
+
+        /* @var EntryRepositoryInterface $repository */
+        $repository = $this->container->make($repository);
+
+        /**
+         * Cache everything using the repository.
+         *
+         * @var Sitemap
+         */
+        $sitemap = $repository->cache(
+            'sitemap',
+            $ttl,
+            function () use ($sitemap, $repository, $configuration) {
+
+                /* @var EntryInterface $model */
+                $model = $repository->getModel();
+
+                /* @var StreamInterface $stream */
+                $stream = $model->getStream();
+
+                $lastmod = $repository
+                    ->lastModified()// Grabs Entry
+                    ->lastModified()// Grabs Carbon
+                    ->toAtomString(); // Returns String
+
+                $translatable = $stream->isTranslatable();
+
+                $locales = config('streams::locales.enabled');
+                $default = config('streams::locales.default');
+
+                $priority  = array_get($configuration, 'priority', 0.5);
+                $frequency = array_get($configuration, 'frequency', 'weekly');
+
+                /* @var EntryInterface $entry */
+                foreach ($repository->all() as $entry) {
+
+                    $images       = []; // @todo Make this around hookable.
+                    $translations = [];
+
+                    if ($translatable) {
+
+                        $lastmod = $entry
+                            ->lastModified()
+                            ->toAtomString();
+
+                        $defaultRoute = $entry->route('view');
+
+                        $translatedRoute = $entry
+                            ->translate()
+                            ->route('view');
+
+                        foreach ($locales as $locale) {
+                            if ($locale != $default) {
+
+                                if ($defaultRoute != $translatedRoute) {
+                                    $url = $translatedRoute;
+                                } else {
+                                    $url = '/' . $locale . $defaultRoute;
+                                }
+
+                                $translations[] = [
+                                    'language' => $locale,
+                                    'url'      => url($url),
+                                ];
+                            }
+                        }
+                    }
+
+//            Default hook returns []
+//            foreach ($entry->call('SOMETHING FOR IMAGES') as $image) {
+//                <image:image>
+//                  <image:loc>http://example.com/image.jpg</image:loc>
+//                </image:image>
+//            }
+
+                    $sitemap->add(
+                        url($entry->route('view')),
+                        $lastmod,
+                        $priority,
+                        $frequency,
+                        $images,
+                        null,
+                        $translations
                     );
                 }
+
+                return $sitemap;
             }
-        }
-        
-        return $this->sitemap->render(ltrim($format, '.'));
+        );
+
+        return $this->response->make(
+            $sitemap->generate('xml')['content'],
+            200,
+            [
+                'Content-Type' => 'application/xml',
+            ]
+        );
     }
 }
