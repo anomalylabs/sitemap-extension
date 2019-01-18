@@ -26,7 +26,7 @@
         "email": "support@pyrocms.com"
     },
     "require": {
-        "anomaly/streams-platform": "^1.4",
+        "anomaly/streams-platform": "^1.6",
         "laravelium/sitemap": "^2.7"
     },
     "autoload": {
