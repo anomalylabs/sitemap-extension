@@ -7,7 +7,6 @@
         "extension",
         "sitemap"
     ],
-    "homepage": "http://pyrocms.com/",
     "license": "MIT",
     "authors": [
         {
@@ -15,17 +14,24 @@
             "email": "support@pyrocms.com",
             "homepage": "http://pyrocms.com/",
             "role": "Owner"
+        },
+        {
+            "name": "Ryan Thompson",
+            "email": "ryan@pyrocms.com",
+            "homepage": "http://ryanthepyro.com/",
+            "role": "Developer"
         }
     ],
     "support": {
         "email": "support@pyrocms.com"
     },
+    "require": {
+        "anomaly/streams-platform": "^1.6",
+        "laravelium/sitemap": "^2.7"
+    },
     "autoload": {
         "psr-4": {
             "Anomaly\\SitemapExtension\\": "src/"
-        },
-        "psr-0": {
-            "Roumen\\Sitemap": "vendor/roumen/sitemap/src/"
         }
     }
 }
