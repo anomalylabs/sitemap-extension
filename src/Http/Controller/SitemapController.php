@@ -129,11 +129,6 @@ class SitemapController extends PublicController
                 /* @var StreamInterface $stream */
                 $stream = $model->getStream();
 
-                $lastmod = $repository
-                    ->lastModified()// Grabs Entry
-                    ->lastModified()// Grabs Carbon
-                    ->toAtomString(); // Returns String
-
                 $translatable = $stream->isTranslatable();
 
                 $locales = config('streams::locales.enabled');
@@ -184,12 +179,12 @@ class SitemapController extends PublicController
                     );
                 }
 
-                return $sitemap;
+                return $sitemap->generate('xml')['content'];
             }
         );
 
         return $this->response->make(
-            $sitemap->generate('xml')['content'],
+            $sitemap,
             200,
             [
                 'Content-Type' => 'application/xml',
