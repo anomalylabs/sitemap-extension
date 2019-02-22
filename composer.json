@@ -27,7 +27,7 @@
     },
     "require": {
         "anomaly/streams-platform": "^1.6",
-        "laravelium/sitemap": "^2.7"
+        "laravelium/sitemap": "^3.0"
     },
     "autoload": {
         "psr-4": {
