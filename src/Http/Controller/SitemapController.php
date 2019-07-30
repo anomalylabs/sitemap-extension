@@ -9,6 +9,7 @@ use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
 use Anomaly\Streams\Platform\Entry\Contract\EntryRepositoryInterface;
 use Anomaly\Streams\Platform\Http\Controller\PublicController;
 use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
+use Anomaly\Streams\Platform\Traits\Hookable;
 use Laravelium\Sitemap\Sitemap;
 
 /**
@@ -110,7 +111,7 @@ class SitemapController extends PublicController
         // Cache TTL (1hr)
         $ttl = array_get($configuration, 'ttl', 60 * 60);
 
-        /* @var EntryRepositoryInterface $repository */
+        /* @var EntryRepositoryInterface|Hookable $repository */
         $repository = $this->container->make($repository);
 
         /**
@@ -138,7 +139,7 @@ class SitemapController extends PublicController
                 $frequency = array_get($configuration, 'frequency', 'weekly');
 
                 /* @var EntryInterface $entry */
-                foreach ($repository->all() as $entry) {
+                foreach ($repository->call('get_sitemap') as $entry) {
 
                     $images       = []; // @todo Make this around hookable.
                     $translations = [];
