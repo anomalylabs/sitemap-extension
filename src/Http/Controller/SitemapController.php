@@ -1,4 +1,6 @@
-<?php namespace Anomaly\SitemapExtension\Http\Controller;
+<?php
+
+namespace Anomaly\SitemapExtension\Http\Controller;
 
 use Anomaly\Streams\Platform\Addon\Addon;
 use Anomaly\Streams\Platform\Addon\AddonCollection;
@@ -61,8 +63,8 @@ class SitemapController extends PublicController
                 $repository = $this->container->make($repository);
 
                 $lastmod = $repository
-                    ->lastModified()// Grabs Entry
-                    ->lastModified()// Grabs Carbon
+                    ->lastModified() // Grabs Entry
+                    ->lastModified() // Grabs Carbon
                     ->toAtomString(); // Returns String
 
                 $sitemap->addSitemap(
@@ -120,7 +122,7 @@ class SitemapController extends PublicController
          * @var Sitemap
          */
         $sitemap = $repository->cache(
-            'sitemap',
+            md5($addon . $file),
             $ttl,
             function () use ($sitemap, $repository, $configuration) {
 
@@ -162,12 +164,12 @@ class SitemapController extends PublicController
                         }
                     }
 
-//            Default hook returns []
-//            foreach ($entry->call('SOMETHING FOR IMAGES') as $image) {
-//                <image:image>
-//                  <image:loc>http://example.com/image.jpg</image:loc>
-//                </image:image>
-//            }
+                    //            Default hook returns []
+                    //            foreach ($entry->call('SOMETHING FOR IMAGES') as $image) {
+                    //                <image:image>
+                    //                  <image:loc>http://example.com/image.jpg</image:loc>
+                    //                </image:image>
+                    //            }
 
                     $sitemap->add(
                         url($entry->route('view')),
