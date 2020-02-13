@@ -139,6 +139,8 @@ class SitemapController extends PublicController
 
                 $priority  = array_get($configuration, 'priority', 0.5);
                 $frequency = array_get($configuration, 'frequency', 'weekly');
+                $route     = array_get($configuration, 'route', 'view');
+
 
                 /* @var EntryInterface $entry */
                 foreach ($repository->call('get_sitemap') as $entry) {
@@ -152,13 +154,12 @@ class SitemapController extends PublicController
 
                     if ($translatable) {
 
-
                         foreach ($locales as $locale) {
                             if ($locale != $default) {
 
                                 $translations[] = [
                                     'language' => $locale,
-                                    'url'      => $entry->route('view'),
+                                    'url'      => $entry->route($route),
                                 ];
                             }
                         }
@@ -172,7 +173,7 @@ class SitemapController extends PublicController
                     //            }
 
                     $sitemap->add(
-                        url($entry->route('view')),
+                        url($entry->route($route)),
                         $lastmod,
                         $priority,
                         $frequency,
