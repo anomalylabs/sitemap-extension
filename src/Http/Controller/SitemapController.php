@@ -11,6 +11,7 @@ use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
 use Anomaly\Streams\Platform\Entry\Contract\EntryRepositoryInterface;
 use Anomaly\Streams\Platform\Http\Controller\PublicController;
 use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
+use Anomaly\Streams\Platform\Support\Resolver;
 use Anomaly\Streams\Platform\Traits\Hookable;
 use Laravelium\Sitemap\Sitemap;
 
@@ -53,24 +54,46 @@ class SitemapController extends PublicController
                     ];
                 }
 
-                $repository = array_get($configuration, 'repository');
+                if (isset($configuration['repository'])) {
+                    
+                    $repository = array_get($configuration, 'repository');
 
-                if (!class_exists($repository) && !interface_exists($repository)) {
+                    if (is_string($repository) && (class_exists($repository) || interface_exists($repository))) {
+                        
+                        /* @var EntryRepositoryInterface|Hookable $repository */
+                        $repository = $this->container->make($repository);
+                    }
+            
+                    if (is_callable($repository)) {
+                        
+                        /* @var EntryRepositoryInterface|Hookable $repository */
+                        $repository = app(Resolver::class)->resolve($repository);
+                    }
+
+                    $lastmod = $repository
+                        ->lastModified() // Grabs Entry
+                        ->lastModified() // Grabs Carbon
+                        ->toAtomString(); // Returns String
+
+                    $sitemap->addSitemap(
+                        $this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'),
+                        $lastmod
+                    );
+
                     continue;
                 }
 
-                /* @var EntryRepositoryInterface $repository */
-                $repository = $this->container->make($repository);
+                if (isset($configuration['lastmod']) && is_callable($configuration['lastmod'])) {
+                    
+                    $lastmod = app(Resolver::class)->resolve($configuration['lastmod']);
 
-                $lastmod = $repository
-                    ->lastModified() // Grabs Entry
-                    ->lastModified() // Grabs Carbon
-                    ->toAtomString(); // Returns String
+                    $sitemap->addSitemap(
+                        $this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'),
+                        $lastmod
+                    );
 
-                $sitemap->addSitemap(
-                    $this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'),
-                    $lastmod
-                );
+                    continue;
+                }
             }
         }
 
@@ -106,15 +129,20 @@ class SitemapController extends PublicController
 
         $repository = array_get($configuration, 'repository');
 
-        if (!class_exists($repository) && !interface_exists($repository)) {
-            throw new \Exception("Repository for [{$hint}] sitemap repository does not exist[$repository]");
+        if (is_string($repository) && (class_exists($repository) || interface_exists($repository))) {
+            
+            /* @var EntryRepositoryInterface|Hookable $repository */
+            $repository = $this->container->make($repository);
+        }
+
+        if (is_callable($repository)) {
+            
+            /* @var EntryRepositoryInterface|Hookable $repository */
+            $repository = app(Resolver::class)->resolve($repository);
         }
 
         // Cache TTL (1hr)
         $ttl = array_get($configuration, 'ttl', 60 * 60);
-
-        /* @var EntryRepositoryInterface|Hookable $repository */
-        $repository = $this->container->make($repository);
 
         /**
          * Cache everything using the repository.
@@ -140,7 +168,6 @@ class SitemapController extends PublicController
                 $priority  = array_get($configuration, 'priority', 0.5);
                 $frequency = array_get($configuration, 'frequency', 'weekly');
                 $route     = array_get($configuration, 'route', 'view');
-
 
                 /* @var EntryInterface $entry */
                 foreach ($repository->call('get_sitemap') as $entry) {
@@ -172,8 +199,14 @@ class SitemapController extends PublicController
                     //                </image:image>
                     //            }
 
+                    $url = url($entry->route($route) ?: '/');
+
+                    if ($entry->hasHook('view_route')) {
+                        $url = $entry->call('view_route', compact('entry'));
+                    }
+
                     $sitemap->add(
-                        url($entry->route($route)),
+                        $url,
                         $lastmod,
                         $priority,
                         $frequency,
