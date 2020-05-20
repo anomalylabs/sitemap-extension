@@ -2,6 +2,7 @@
 
 namespace Anomaly\SitemapExtension\Http\Controller;
 
+use Anomaly\SitemapExtension\Event\BuildSitemap;
 use Anomaly\SitemapExtension\Event\GatherSitemaps;
 use Anomaly\Streams\Platform\Addon\Addon;
 use Anomaly\Streams\Platform\Addon\AddonCollection;
@@ -222,6 +223,8 @@ class SitemapController extends PublicController
                 return $sitemap->generate('xml')['content'];
             }
         );
+
+        event(new BuildSitemap($sitemap));
 
         return $this->response->make(
             $sitemap,
