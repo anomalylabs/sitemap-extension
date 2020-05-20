@@ -2,6 +2,7 @@
 
 namespace Anomaly\SitemapExtension\Http\Controller;
 
+use Anomaly\SitemapExtension\Event\GatherSitemaps;
 use Anomaly\Streams\Platform\Addon\Addon;
 use Anomaly\Streams\Platform\Addon\AddonCollection;
 use Anomaly\Streams\Platform\Addon\Command\GetAddon;
@@ -55,17 +56,17 @@ class SitemapController extends PublicController
                 }
 
                 if (isset($configuration['repository'])) {
-                    
+
                     $repository = array_get($configuration, 'repository');
 
                     if (is_string($repository) && (class_exists($repository) || interface_exists($repository))) {
-                        
+
                         /* @var EntryRepositoryInterface|Hookable $repository */
                         $repository = $this->container->make($repository);
                     }
-            
+
                     if (is_callable($repository)) {
-                        
+
                         /* @var EntryRepositoryInterface|Hookable $repository */
                         $repository = app(Resolver::class)->resolve($repository);
                     }
@@ -84,7 +85,7 @@ class SitemapController extends PublicController
                 }
 
                 if (isset($configuration['lastmod']) && is_callable($configuration['lastmod'])) {
-                    
+
                     $lastmod = app(Resolver::class)->resolve($configuration['lastmod']);
 
                     $sitemap->addSitemap(
@@ -96,6 +97,8 @@ class SitemapController extends PublicController
                 }
             }
         }
+
+        event(new GatherSitemaps($sitemap));
 
         return $this->response->make(
             $sitemap->generate('sitemapindex')['content'],
@@ -130,13 +133,13 @@ class SitemapController extends PublicController
         $repository = array_get($configuration, 'repository');
 
         if (is_string($repository) && (class_exists($repository) || interface_exists($repository))) {
-            
+
             /* @var EntryRepositoryInterface|Hookable $repository */
             $repository = $this->container->make($repository);
         }
 
         if (is_callable($repository)) {
-            
+
             /* @var EntryRepositoryInterface|Hookable $repository */
             $repository = app(Resolver::class)->resolve($repository);
         }
