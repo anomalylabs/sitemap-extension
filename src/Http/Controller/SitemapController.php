@@ -224,7 +224,9 @@ class SitemapController extends PublicController
             }
         );
 
-        event(new BuildSitemap($sitemap));
+        if (gettype($sitemap) == 'object' && get_class($sitemap) == Sitemap::class) {
+            event(new BuildSitemap($sitemap));
+        }
 
         return $this->response->make(
             $sitemap,
