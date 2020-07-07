@@ -72,15 +72,15 @@ class SitemapController extends PublicController
                         $repository = app(Resolver::class)->resolve($repository);
                     }
 
-                    $lastmod = $repository
-                        ->lastModified() // Grabs Entry
-                        ->lastModified() // Grabs Carbon
+                    if ($lastModifiedEntry = $repository->lastModified()) {
+                        $lastModifiedTime = $lastModifiedEntry->lastModified() // Grabs Carbon
                         ->toAtomString(); // Returns String
 
-                    $sitemap->addSitemap(
-                        $this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'),
-                        $lastmod
-                    );
+                        $sitemap->addSitemap(
+                            $this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'),
+                            $lastModifiedTime
+                        );
+                    }
 
                     continue;
                 }
