@@ -29,14 +29,8 @@
     },
     "require": {
         "anomaly/streams-platform": "^1.7",
-        "laravelium/sitemap": "dev-laravel-8"
+        "laravelium/sitemap": "^8.0"
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/RyanThompson/laravel-sitemap"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Anomaly\\SitemapExtension\\": "src/"
