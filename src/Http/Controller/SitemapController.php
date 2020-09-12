@@ -2,20 +2,13 @@
 
 namespace Anomaly\SitemapExtension\Http\Controller;
 
+use Laravelium\Sitemap\Sitemap;
+use Anomaly\Streams\Platform\Support\Resolver;
 use Anomaly\SitemapExtension\Event\BuildSitemap;
 use Anomaly\SitemapExtension\Event\GatherSitemaps;
-use Anomaly\Streams\Platform\Addon\Addon;
 use Anomaly\Streams\Platform\Addon\AddonCollection;
 use Anomaly\Streams\Platform\Addon\Command\GetAddon;
-use Anomaly\Streams\Platform\Addon\Extension\Extension;
-use Anomaly\Streams\Platform\Addon\Module\Module;
-use Anomaly\Streams\Platform\Entry\Contract\EntryInterface;
-use Anomaly\Streams\Platform\Entry\Contract\EntryRepositoryInterface;
 use Anomaly\Streams\Platform\Http\Controller\PublicController;
-use Anomaly\Streams\Platform\Stream\Contract\StreamInterface;
-use Anomaly\Streams\Platform\Support\Resolver;
-use Anomaly\Streams\Platform\Traits\Hookable;
-use Laravelium\Sitemap\Sitemap;
 
 /**
  * Class SitemapController
@@ -56,7 +49,7 @@ class SitemapController extends PublicController
                     ];
                 }
 
-                if (isset($configuration['repository'])) {
+                if (is_array($configuration) && isset($configuration['repository'])) {
 
                     $repository = array_get($configuration, 'repository');
 
@@ -85,7 +78,7 @@ class SitemapController extends PublicController
                     continue;
                 }
 
-                if (isset($configuration['lastmod']) && is_callable($configuration['lastmod'])) {
+                if (is_array($configuration) && isset($configuration['lastmod']) && is_callable($configuration['lastmod'])) {
 
                     $lastmod = app(Resolver::class)->resolve($configuration['lastmod']);
 
