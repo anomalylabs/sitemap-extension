@@ -183,7 +183,7 @@ class SitemapController extends PublicController
 
                                 $translations[] = [
                                     'language' => $locale,
-                                    'url'      => $entry->route($route),
+                                    'url'      => url('/' . $locale . ($entry->translate($locale)?->route($route) ?? $entry->route($route) ?? '/')),
                                 ];
                             }
                         }
