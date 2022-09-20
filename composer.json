@@ -29,7 +29,7 @@
     },
     "require": {
         "anomaly/streams-platform": "^1.7",
-        "laravelium/sitemap": "^8.0"
+        "spatie/laravel-sitemap": "^6.2"
     },
     "autoload": {
         "psr-4": {
