@@ -16,6 +16,7 @@ use Anomaly\Streams\Platform\Http\Controller\PublicController;
  * @link          http://pyrocms.com/
  * @author        PyroCMS, Inc. <support@pyrocms.com>
  * @author        Ryan Thompson <ryan@pyrocms.com>
+ * @author        Claus Hjort Bube <chb@b-cph.com>
  */
 class SitemapController extends PublicController
 {
@@ -168,6 +169,9 @@ class SitemapController extends PublicController
 
                 /* @var EntryInterface $entry */
                 foreach ($repository->call('get_sitemap') as $entry) {
+                    if ($entry->hide_from_sitemap_xml == 1) {
+                        continue;
+                    }
 
                     $images       = []; // @todo Make this around hookable.
                     $translations = [];
@@ -183,7 +187,7 @@ class SitemapController extends PublicController
 
                                 $translations[] = [
                                     'language' => $locale,
-                                    'url'      => $entry->route($route),
+                                    'url'      => url('/' . $locale . ($entry->translate($locale)?->route($route) ?? $entry->route($route) ?? '/')),
                                 ];
                             }
                         }
