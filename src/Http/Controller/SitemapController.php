@@ -2,13 +2,16 @@
 
 namespace Anomaly\SitemapExtension\Http\Controller;
 
-use Laravelium\Sitemap\Sitemap;
 use Anomaly\Streams\Platform\Support\Resolver;
 use Anomaly\SitemapExtension\Event\BuildSitemap;
 use Anomaly\SitemapExtension\Event\GatherSitemaps;
 use Anomaly\Streams\Platform\Addon\AddonCollection;
 use Anomaly\Streams\Platform\Addon\Command\GetAddon;
 use Anomaly\Streams\Platform\Http\Controller\PublicController;
+use Carbon\Carbon;
+use Spatie\Sitemap\SitemapIndex;
+use Spatie\Sitemap\Tags\Sitemap;
+use Spatie\Sitemap\Tags\Url;
 
 /**
  * Class SitemapController
@@ -24,11 +27,12 @@ class SitemapController extends PublicController
      * Return an index of sitemaps.
      *
      * @param AddonCollection $addons
-     * @param Sitemap $sitemap
      * @return string
      */
-    public function index(AddonCollection $addons, Sitemap $sitemap)
+    public function index(AddonCollection $addons)
     {
+        $sitemapIndex = SitemapIndex::create();
+
         /* @var Addon $addon */
         foreach ($addons->withConfig('sitemap')->forget(['anomaly.extension.sitemap']) as $addon) {
 
@@ -66,12 +70,9 @@ class SitemapController extends PublicController
                     }
 
                     if ($lastModifiedEntry = $repository->lastModified()) {
-                        $lastModifiedTime = $lastModifiedEntry->lastModified() // Grabs Carbon
-                        ->toAtomString(); // Returns String
-
-                        $sitemap->addSitemap(
-                            $this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'),
-                            $lastModifiedTime
+                        $sitemapIndex->add(
+                            Sitemap::create($this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'))
+                            ->setLastModificationDate($lastModifiedEntry->lastModified())
                         );
                     }
 
@@ -80,22 +81,20 @@ class SitemapController extends PublicController
 
                 if (is_array($configuration) && isset($configuration['lastmod']) && is_callable($configuration['lastmod'])) {
 
-                    $lastmod = app(Resolver::class)->resolve($configuration['lastmod']);
+                    $lastmod = new Carbon(app(Resolver::class)->resolve($configuration['lastmod']));
 
-                    $sitemap->addSitemap(
-                        $this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'),
-                        $lastmod
+                    $sitemapIndex->add(
+                        Sitemap::create($this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'))
+                            ->setLastModificationDate($lastmod)
                     );
-
-                    continue;
                 }
             }
         }
 
-        event(new GatherSitemaps($sitemap));
+        event(new GatherSitemaps($sitemapIndex));
 
         return $this->response->make(
-            $sitemap->generate('sitemapindex')['content'],
+            $sitemapIndex->render(),
             200,
             [
                 'Content-Type' => 'application/xml',
@@ -106,15 +105,16 @@ class SitemapController extends PublicController
     /**
      * Return a sitemap.
      *
-     * @param Sitemap $sitemap
      * @param $addon
      * @param $file
      * @return \Illuminate\Http\Response
      * @throws \Exception
      */
-    public function view(Sitemap $sitemap, $addon, $file)
+    public function view($addon, $file)
     {
-        $addon = $this->dispatchNow(new GetAddon($addon));
+        $sitemap = \Spatie\Sitemap\Sitemap::create();
+
+        $addon = dispatch_sync(new GetAddon($addon));
 
         $configuration = config($hint = $addon->getNamespace('sitemap.' . $file));
 
@@ -168,58 +168,47 @@ class SitemapController extends PublicController
 
                 /* @var EntryInterface $entry */
                 foreach ($repository->call('get_sitemap') as $entry) {
-
-                    $images       = []; // @todo Make this around hookable.
-                    $translations = [];
-
-                    $lastmod = $entry
-                        ->lastModified()
-                        ->toAtomString();
-
-                    if ($translatable) {
-
-                        foreach ($locales as $locale) {
-                            if ($locale != $default) {
-
-                                $translations[] = [
-                                    'language' => $locale,
-                                    'url'      => $entry->route($route),
-                                ];
-                            }
-                        }
-                    }
-
-                    //            Default hook returns []
-                    //            foreach ($entry->call('SOMETHING FOR IMAGES') as $image) {
-                    //                <image:image>
-                    //                  <image:loc>http://example.com/image.jpg</image:loc>
-                    //                </image:image>
-                    //            }
-
-                    $url = url($entry->route($route) ?: '/');
-
-                    if ($entry->hasHook('view_route')) {
-                        $url = $entry->call('view_route', compact('entry'));
-                    }
+                    $lastmod = $entry->lastModified();
 
                     $sitemap->add(
-                        $url,
-                        $lastmod,
-                        $priority,
-                        $frequency,
-                        $images,
-                        null,
-                        $translations
+                        Url::create(url($entry->route($route) ?: '/'))
+                            ->setLastModificationDate($lastmod)
+                            ->setPriority($priority)
+                            ->setChangeFrequency($frequency)
                     );
+
+                    if ($translatable) {
+                        foreach ($locales as $locale) {
+                            if ($locale != $default) {
+                                config(['app.locale' => $locale]);
+
+                                $uri = $locale;
+
+                                $path = $entry->route($route) ?: '/';
+
+                                if($path !== '/') {
+                                    $uri .= $path;
+                                }
+
+                                $sitemap->add(
+                                    Url::create(url($uri))
+                                        ->setLastModificationDate($lastmod)
+                                        ->setPriority($priority)
+                                        ->setChangeFrequency($frequency)
+                                );
+                            }
+                        }
+
+                        //reset to default locale
+                        config(['app.locale' => $default]);
+                    }
                 }
 
-                return $sitemap->generate('xml')['content'];
+                event(new BuildSitemap($sitemap));
+
+                return $sitemap->render();
             }
         );
-
-        if (gettype($sitemap) == 'object' && get_class($sitemap) == Sitemap::class) {
-            event(new BuildSitemap($sitemap));
-        }
 
         return $this->response->make(
             $sitemap,

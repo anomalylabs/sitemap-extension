@@ -2,7 +2,7 @@
 
 namespace Anomaly\SitemapExtension\Event;
 
-use Laravelium\Sitemap\Sitemap;
+use Spatie\Sitemap\Sitemap;
 
 /**
  * Class BuildSitemap

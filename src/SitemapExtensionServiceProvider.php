@@ -2,7 +2,7 @@
 
 use Anomaly\Streams\Platform\Addon\AddonServiceProvider;
 use Anomaly\Streams\Platform\Model\EloquentRepository;
-use Laravelium\Sitemap\SitemapServiceProvider;
+use Spatie\Sitemap\SitemapServiceProvider;
 
 /**
  * Class SitemapExtensionServiceProvider
@@ -20,7 +20,7 @@ class SitemapExtensionServiceProvider extends AddonServiceProvider
      * @var array
      */
     protected $providers = [
-        SitemapServiceProvider::class,
+        SitemapServiceProvider::class
     ];
 
     /**

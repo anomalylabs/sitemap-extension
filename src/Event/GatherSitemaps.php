@@ -2,7 +2,7 @@
 
 namespace Anomaly\SitemapExtension\Event;
 
-use Laravelium\Sitemap\Sitemap;
+use Spatie\Sitemap\SitemapIndex;
 
 /**
  * Class GatherSitemaps
@@ -17,16 +17,16 @@ class GatherSitemaps
     /**
      * The sitemap instance.
      *
-     * @var Sitemap
+     * @var SitemapIndex
      */
     protected $sitemap;
 
     /**
      * Create a new class instance.
      *
-     * @param Sitemap $sitemap
+     * @param SitemapIndex $sitemap
      */
-    public function __construct(Sitemap $sitemap)
+    public function __construct(SitemapIndex $sitemap)
     {
         $this->sitemap = $sitemap;
     }
@@ -34,7 +34,7 @@ class GatherSitemaps
     /**
      * Get the sitemap.
      * 
-     * @return Sitemap
+     * @return SitemapIndex
      */
     public function getSitemap()
     {
