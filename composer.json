@@ -28,8 +28,8 @@
         "source": "https://github.com/anomalylabs/sitemap-extension"
     },
     "require": {
-        "anomaly/streams-platform": "^1.7",
-        "spatie/laravel-sitemap": "^6.2"
+        "anomaly/streams-platform": "^1.10",
+        "spatie/laravel-sitemap": "^7.3"
     },
     "autoload": {
         "psr-4": {
