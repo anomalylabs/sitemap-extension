@@ -69,6 +69,10 @@ class SitemapController extends PublicController
                         $repository = app(Resolver::class)->resolve($repository);
                     }
 
+                    if (!is_object($repository) || !method_exists($repository, 'lastModified')) {
+                        continue;
+                    }
+
                     if ($lastModifiedEntry = $repository->lastModified()) {
                         $sitemapIndex->add(
                             Sitemap::create($this->url->to('sitemap/' . $addon->getNamespace() . '/' . $file . '.xml'))
@@ -114,9 +118,13 @@ class SitemapController extends PublicController
     {
         $sitemap = \Spatie\Sitemap\Sitemap::create();
 
-        $addon = dispatch_sync(new GetAddon($addon));
+        if (!$addon = dispatch_sync(new GetAddon($addon))) {
+            abort(404);
+        }
 
-        $configuration = config($hint = $addon->getNamespace('sitemap.' . $file));
+        if (!$configuration = config($addon->getNamespace('sitemap.' . $file))) {
+            abort(404);
+        }
 
         if (is_string($configuration)) {
             $configuration = [
@@ -136,6 +144,10 @@ class SitemapController extends PublicController
 
             /* @var EntryRepositoryInterface|Hookable $repository */
             $repository = app(Resolver::class)->resolve($repository);
+        }
+
+        if (!is_object($repository) || !method_exists($repository, 'cache')) {
+            abort(404);
         }
 
         // Cache TTL (1hr)
